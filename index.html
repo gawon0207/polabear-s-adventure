@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>극곰이의 모험 (Polar Bear's Adventure)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Jua for cute playful round Korean text -->
+  <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+  <style>
+    * {
+      font-family: 'Jua', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    
+    body {
+      background-color: #0f172a;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Outer Wrapper for responsive device feel */
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      max-height: 750px;
+      box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.4);
+      overflow: hidden;
+      border-radius: 24px;
+      background: linear-gradient(to bottom, #0284c7, #38bdf8, #bae6fd);
+    }
+
+    /* Custom Animations */
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(-4deg); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8)); }
+      50% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(255, 255, 255, 1)); }
+    }
+
+    .animate-float {
+      animation: floatSlow 2.5s ease-in-out infinite;
+    }
+
+    .animate-pulse-btn {
+      animation: pulseGlow 1.5s ease-in-out infinite;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 flex items-center justify-center p-0 md:p-4">
+
+<div class="game-wrapper flex flex-col justify-between relative border-4 border-sky-300">
+
+  <!-- HUD: Top Centered Live Score & Sound Toggle -->
+  <div id="score-container" class="absolute top-6 left-0 right-0 z-10 flex flex-col items-center pointer-events-none opacity-0 transition-opacity duration-300">
+    <span id="live-score" class="text-6xl text-white drop-shadow-[0_4px_8px_rgba(2,132,199,0.8)] tracking-wider">0</span>
+    <div id="lives-display" class="flex gap-1 text-2xl mt-1 drop-shadow-md">❤️❤️❤️</div>
+  </div>
+
+  <!-- STAGE UP TOAST ALERT -->
+  <div id="stage-up-toast" class="absolute top-28 left-0 right-0 z-20 flex justify-center pointer-events-none opacity-0 transition-all duration-500 transform -translate-y-4">
+    <div class="bg-white/90 backdrop-blur-md px-6 py-2 rounded-full border-2 border-sky-300 shadow-lg text-sky-900 text-lg font-bold flex items-center gap-2 animate-bounce">
+      <span id="stage-toast-icon">🚀</span> <span id="stage-toast-text">STAGE UP!</span>
+    </div>
+  </div>
+
+  <!-- Music Mute/Unmute Button -->
+  <button id="bgm-toggle-btn" class="absolute top-4 right-4 z-30 bg-white/80 hover:bg-white text-sky-900 font-bold px-3 py-1.5 rounded-full text-xs shadow-md border border-sky-200 flex items-center gap-1 transition-transform active:scale-95">
+    <span id="bgm-icon">🎵</span> <span id="bgm-text">BGM ON</span>
+  </button>
+
+  <!-- Game Canvas -->
+  <canvas id="gameCanvas" class="w-full h-full cursor-pointer"></canvas>
+
+  <!-- START SCREEN OVERLAY -->
+  <div id="start-screen" class="absolute inset-0 z-20 flex flex-col items-center justify-between p-8 bg-sky-950/30 backdrop-blur-[2px]">
+    <div class="mt-14 text-center animate-float">
+      <div class="inline-block bg-white/90 text-sky-800 border border-sky-300 text-xs px-3 py-1 rounded-full mb-2 shadow-sm font-bold tracking-widest">🧊 신나는 빙산 비행!</div>
+      <h1 class="text-5xl text-white drop-shadow-[0_4px_0_rgba(2,132,199,0.8)] tracking-wide">🐻‍❄️ 극곰이의 모험</h1>
+      <p class="text-sky-100 text-lg mt-1 drop-shadow">하늘을 나는 귀여운 북극곰의 모험</p>
+    </div>
+
+    <!-- Central Interactive Graphic Prompt -->
+    <div class="flex flex-col items-center my-auto">
+      <div class="w-24 h-24 bg-white rounded-full border-4 border-sky-300 shadow-[0_0_25px_rgba(56,189,248,0.8)] flex items-center justify-center animate-bounce mb-6 relative overflow-hidden">
+        <!-- Polar Bear Graphic Icon -->
+        <div class="w-20 h-20 bg-slate-100 rounded-full flex flex-col items-center justify-center relative">
+          <!-- Ears -->
+          <div class="w-5 h-5 bg-white rounded-full absolute -top-1 left-2 border border-slate-200 flex items-center justify-center"><div class="w-2.5 h-2.5 bg-pink-300 rounded-full"></div></div>
+          <div class="w-5 h-5 bg-white rounded-full absolute -top-1 right-2 border border-slate-200 flex items-center justify-center"><div class="w-2.5 h-2.5 bg-pink-300 rounded-full"></div></div>
+          <!-- Eyes & Nose -->
+          <div class="flex gap-4 mt-2">
+            <div class="w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+            <div class="w-2.5 h-2.5 bg-slate-900 rounded-full"></div>
+          </div>
+          <div class="w-4 h-3 bg-sky-950 rounded-full mt-1 border border-sky-800"></div>
+          <!-- Scarf -->
+          <div class="w-16 h-3 bg-red-500 rounded-full absolute bottom-2 border border-red-700"></div>
+        </div>
+      </div>
+      <p class="text-2xl text-white font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] animate-pulse-btn">
+        👇 화면을 클릭하거나 스페이스바!
+      </p>
+      <span class="text-sky-900 text-sm mt-2 bg-white/90 px-4 py-1.5 rounded-full border border-sky-200 font-bold shadow-sm">클릭 / Touch / Spacebar로 점프</span>
+    </div>
+
+    <!-- High score display on start -->
+    <div class="mb-4 text-center text-sky-900 text-sm bg-white/90 px-5 py-2 rounded-2xl backdrop-blur-sm border border-sky-200 shadow-md">
+      🏆 최고 기록: <span id="start-high-score" class="text-sky-600 font-bold text-lg">0</span> 점
+    </div>
+  </div>
+
+  <!-- GAME OVER OVERLAY -->
+  <div id="gameover-screen" class="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-sky-950/60 backdrop-blur-md hidden">
+    <div class="bg-gradient-to-b from-sky-50 to-sky-100 w-full max-w-xs rounded-3xl p-6 text-center shadow-[0_0_30px_rgba(56,189,248,0.5)] border-4 border-sky-300 transform transition-all scale-95 opacity-0 duration-300" id="gameover-card">
+      
+      <div class="text-5xl mb-1">🐻‍❄️</div>
+      <h2 class="text-4xl text-sky-900 drop-shadow-sm mb-4">모험 종료!</h2>
+      
+      <!-- Score Board Box -->
+      <div class="bg-white/80 rounded-2xl p-4 shadow-inner border border-sky-200 mb-6 space-y-2">
+        <div class="flex justify-between items-center text-sky-800 text-lg">
+          <span>획득 점수</span>
+          <span id="final-score" class="text-3xl text-sky-600 font-bold">0</span>
+        </div>
+        <div class="h-px bg-sky-200 w-full my-1"></div>
+        <div class="flex justify-between items-center text-sky-600 text-sm">
+          <span>최고 점수</span>
+          <span id="best-score" class="text-xl text-sky-700 font-bold">0</span>
+        </div>
+      </div>
+
+      <!-- Restart Button -->
+      <button id="restart-btn" class="w-full bg-gradient-to-r from-sky-400 to-blue-600 hover:from-sky-500 hover:to-blue-700 text-white text-2xl py-3 px-6 rounded-2xl shadow-[0_6px_0_#0284c7] active:shadow-none active:translate-y-1 transition-all flex items-center justify-center gap-2 border-2 border-sky-200 font-bold">
+        <svg class="w-7 h-7 fill-current text-sky-100" viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+        다시 도전
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* Synthesized Web Audio API Cute BGM Player */
+class CuteBGM {
+  constructor() {
+    this.ctx = null;
+    this.isPlaying = false;
+    this.timer = null;
+    this.step = 0;
+    this.isMuted = false;
+
+    // Melodies for each 30-point theme stage
+    this.melodies = [
+      // Stage 0 (0~29 pts): Bright & Bouncy Day Theme
+      [
+        523.25, 659.25, 783.99, 880.00, 1046.50, 783.99, 659.25, 587.33,
+        523.25, 659.25, 783.99, 987.77, 1046.50, 880.00, 783.99, 659.25,
+        698.46, 880.00, 1046.50, 1174.66, 1046.50, 880.00, 698.46, 659.25,
+        587.33, 659.25, 698.46, 783.99, 880.00, 783.99, 659.25, 587.33
+      ],
+      // Stage 1 (30~59 pts): Warm Sunset Melodic Theme
+      [
+        440.00, 523.25, 659.25, 698.46, 880.00, 783.99, 659.25, 523.25,
+        587.33, 698.46, 880.00, 1046.50, 880.00, 698.46, 587.33, 523.25,
+        523.25, 659.25, 783.99, 880.00, 698.46, 587.33, 523.25, 440.00,
+        392.00, 523.25, 659.25, 783.99, 659.25, 523.25, 440.00, 392.00
+      ],
+      // Stage 2 (60~89 pts): Mystic Aurora Night Theme
+      [
+        587.33, 739.99, 880.00, 987.77, 1174.66, 987.77, 880.00, 739.99,
+        659.25, 783.99, 987.77, 1046.50, 1318.51, 1046.50, 987.77, 783.99,
+        523.25, 659.25, 880.00, 987.77, 1046.50, 880.00, 659.25, 523.25,
+        440.00, 587.33, 739.99, 880.00, 739.99, 587.33, 523.25, 440.00
+      ],
+      // Stage 3 (90+ pts): Cosmic Starlight Theme
+      [
+        659.25, 783.99, 987.77, 1046.50, 1318.51, 1046.50, 987.77, 783.99,
+        783.99, 987.77, 1174.66, 1318.51, 1567.98, 1318.51, 1174.66, 987.77,
+        880.00, 1046.50, 1318.51, 1396.91, 1760.00, 1396.91, 1318.51, 1046.50,
+        783.99, 987.77, 1174.66, 1318.51, 1174.66, 987.77, 783.99, 659.25
+      ]
+    ];
+
+    this.basses = [
+      [261.63, 261.63, 329.63, 329.63, 440.00, 440.00, 349.23, 349.23],
+      [220.00, 220.00, 261.63, 261.63, 349.23, 349.23, 392.00, 392.00],
+      [293.66, 293.66, 369.99, 369.99, 440.00, 440.00, 392.00, 392.00],
+      [329.63, 329.63, 392.00, 392.00, 523.25, 523.25, 440.00, 440.00]
+    ];
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  start() {
+    this.init();
+    if (!this.ctx || this.isPlaying || this.isMuted) return;
+    this.isPlaying = true;
+    this.step = 0;
+
+    // Bouncy tempo (~125ms per step)
+    this.timer = setInterval(() => this.playNextStep(), 125);
+  }
+
+  stop() {
+    this.isPlaying = false;
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+
+  toggleMute() {
+    this.isMuted = !this.isMuted;
+    if (this.isMuted) {
+      this.stop();
+    } else {
+      if (gameState === 'PLAYING') this.start();
+    }
+    return this.isMuted;
+  }
+
+  playNextStep() {
+    if (!this.ctx || !this.isPlaying || this.isMuted) return;
+    const now = this.ctx.currentTime;
+
+    // Get active melody for current score theme stage
+    const activeMelody = this.melodies[currentStageIndex % this.melodies.length];
+    const activeBass = this.basses[currentStageIndex % this.basses.length];
+
+    // Cute Lead melody
+    const freq = activeMelody[this.step % activeMelody.length];
+    if (freq) {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now);
+
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.1);
+    }
+
+    // Bassline
+    if (this.step % 2 === 0) {
+      const bassFreq = activeBass[Math.floor(this.step / 2) % activeBass.length];
+      if (bassFreq) {
+        const bassOsc = this.ctx.createOscillator();
+        const bassGain = this.ctx.createGain();
+
+        bassOsc.type = 'sine';
+        bassOsc.frequency.setValueAtTime(bassFreq / 2, now);
+
+        bassGain.gain.setValueAtTime(0.07, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+        bassOsc.connect(bassGain);
+        bassGain.connect(this.ctx.destination);
+
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.18);
+      }
+    }
+
+    this.step++;
+  }
+
+  /* Soft sound effect for jump */
+  playJumpSFX() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(500, now);
+    osc.frequency.exponentialRampToValueAtTime(900, now + 0.08);
+
+    gain.gain.setValueAtTime(0.08, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.09);
+  }
+
+  /* Soft score chime */
+  playScoreSFX() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1046.50, now); // C6
+    osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.12); // E6
+
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  }
+
+  /* Fanfare SFX when Stage Level Ups */
+  playStageUpSFX() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99, 1046.50];
+    notes.forEach((freq, idx) => {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+      gain.gain.setValueAtTime(0.1, now + idx * 0.08);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 0.15);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now + idx * 0.08);
+      osc.stop(now + idx * 0.08 + 0.15);
+    });
+  }
+
+  /* Cute Item & Coin Pickup Sound Effect */
+  playItemSFX(type) {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    if (type === 'SHIELD') {
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.18);
+    } else if (type === 'FISH') {
+      osc.frequency.setValueAtTime(659.25, now);
+      osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.22);
+    } else { // COIN
+      osc.frequency.setValueAtTime(987.77, now);
+      osc.frequency.exponentialRampToValueAtTime(1567.98, now + 0.12);
+    }
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
+  /* Soft bump effect on collision */
+  playHitSFX() {
+    if (!this.ctx || this.isMuted) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(400, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+  }
+}
+
+const bgm = new CuteBGM();
+
+/* STAGE THEMES CONFIGURATION (Every 30 points) */
+const STAGES = [
+  {
+    name: '낮 하늘',
+    icon: '🧊',
+    badge: '🧊 신나는 빙산 비행!',
+    skyTop: '#0284c7', skyMid: '#38bdf8', skyBottom: '#bae6fd',
+    pipeGrad: ['#0284c7', '#38bdf8', '#7dd3fc', '#0369a1'],
+    pipeBorder: '#e0f2fe',
+    groundBase: '#0284c7', groundTop: '#f8fafc', groundStripe: '#38bdf8'
+  },
+  {
+    name: '노을 빛 하늘',
+    icon: '🌅',
+    badge: '🌅 감성 폭발 노을 비행!',
+    skyTop: '#5b21b6', skyMid: '#e11d48', skyBottom: '#fde047',
+    pipeGrad: ['#881337', '#f43f5e', '#fda4af', '#9f1239'],
+    pipeBorder: '#ffe4e6',
+    groundBase: '#9f1239', groundTop: '#fff1f2', groundStripe: '#fb7185'
+  },
+  {
+    name: '오로라 밤',
+    icon: '🌌',
+    badge: '🌌 신비로운 오로라 비행!',
+    skyTop: '#022c22', skyMid: '#0d9488', skyBottom: '#6ee7b7',
+    pipeGrad: ['#064e3b', '#10b981', '#a7f3d0', '#047857'],
+    pipeBorder: '#d1fae5',
+    groundBase: '#047857', groundTop: '#ecfdf5', groundStripe: '#34d399'
+  },
+  {
+    name: '은하수 스페이스',
+    icon: '✨',
+    badge: '✨ 반짝이는 코스믹 비행!',
+    skyTop: '#030712', skyMid: '#312e81', skyBottom: '#a5b4fc',
+    pipeGrad: ['#1e1b4b', '#6366f1', '#c7d2fe', '#3730a3'],
+    pipeBorder: '#e0e7ff',
+    groundBase: '#3730a3', groundTop: '#f5f3ff', groundStripe: '#818cf8'
+  }
+];
+
+let currentStageIndex = 0;
+const stageUpToast = document.getElementById('stage-up-toast');
+const stageToastIcon = document.getElementById('stage-toast-icon');
+const stageToastText = document.getElementById('stage-toast-text');
+
+function triggerStageToast(stage) {
+  stageToastIcon.textContent = stage.icon;
+  stageToastText.textContent = `STAGE ${currentStageIndex + 1}: ${stage.name}!`;
+  stageUpToast.classList.remove('opacity-0', '-translate-y-4');
+  stageUpToast.classList.add('opacity-100', 'translate-y-0');
+
+  bgm.playStageUpSFX();
+
+  setTimeout(() => {
+    stageUpToast.classList.add('opacity-0', '-translate-y-4');
+    stageUpToast.classList.remove('opacity-100', 'translate-y-0');
+  }, 2200);
+}
+
+/* 30점마다 스테이지 전환 체크 함수 */
+function checkStageChange() {
+  const targetStageIndex = Math.floor(score / 30) % STAGES.length;
+  if (targetStageIndex !== currentStageIndex) {
+    currentStageIndex = targetStageIndex;
+    triggerStageToast(STAGES[currentStageIndex]);
+    if (typeof bird !== 'undefined') {
+      spawnParticles(bird.x, bird.y, '#fef08a', 25);
+    }
+  }
+}
+
+/* GAME CORE CONSTANTS & DOM ELEMENTS */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const startScreen = document.getElementById('start-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const gameoverCard = document.getElementById('gameover-card');
+const scoreContainer = document.getElementById('score-container');
+const liveScoreEl = document.getElementById('live-score');
+const finalScoreEl = document.getElementById('final-score');
+const bestScoreEl = document.getElementById('best-score');
+const startHighScoreEl = document.getElementById('start-high-score');
+const restartBtn = document.getElementById('restart-btn');
+const bgmToggleBtn = document.getElementById('bgm-toggle-btn');
+const bgmIcon = document.getElementById('bgm-icon');
+const bgmText = document.getElementById('bgm-text');
+const livesDisplay = document.getElementById('lives-display');
+
+function updateLivesUI() {
+  if (livesDisplay) {
+    let hearts = '';
+    for (let i = 0; i < 3; i++) {
+      hearts += (i < bird.lives) ? '❤️' : '🖤';
+    }
+    livesDisplay.textContent = hearts;
+  }
+}
+
+/* Responsive Canvas Sizing */
+let width = 0;
+let height = 0;
+
+function resizeCanvas() {
+  const container = canvas.parentElement;
+  width = container.clientWidth;
+  height = container.clientHeight;
+  canvas.width = width;
+  canvas.height = height;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+/* LocalStorage High Score */
+let highScore = parseInt(localStorage.getItem('polar_bear_highscore') || '0', 10);
+startHighScoreEl.textContent = highScore;
+
+let gameState = 'START'; // 'START' | 'PLAYING' | 'GAMEOVER'
+let score = 0;
+let frame = 0;
+let animationReq = null;
+
+// Ground level
+const GROUND_HEIGHT = 80;
+
+// Clouds in sky
+const clouds = [
+  { x: 50, y: 80, speed: 0.4, scale: 0.8 },
+  { x: 220, y: 130, speed: 0.6, scale: 1.1 },
+  { x: 340, y: 60, speed: 0.3, scale: 0.7 }
+];
+
+// Snowflakes / Sparkle Particle effects
+let particles = [];
+let floatingTexts = [];
+
+function spawnFloatingText(x, y, text, color = '#fef08a') {
+  floatingTexts.push({
+    x: x,
+    y: y,
+    text: text,
+    color: color,
+    life: 1.0,
+    vy: -1.2
+  });
+}
+
+function updateAndDrawFloatingTexts() {
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y += ft.vy;
+    ft.life -= 0.02;
+
+    if (ft.life <= 0) {
+      floatingTexts.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = ft.life;
+    ctx.font = '20px Jua, sans-serif';
+    ctx.fillStyle = ft.color;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 3;
+    ctx.strokeText(ft.text, ft.x - 20, ft.y);
+    ctx.fillText(ft.text, ft.x - 20, ft.y);
+    ctx.restore();
+  }
+}
+
+function spawnParticles(x, y, color, count = 6) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x: x,
+      y: y,
+      vx: (Math.random() - 0.5) * 4,
+      vy: (Math.random() - 0.5) * 4,
+      size: Math.random() * 5 + 3,
+      color: color,
+      life: 1,
+      decay: Math.random() * 0.03 + 0.02
+    });
+  }
+}
+
+// POLAR BEAR CHARACTER
+const bird = {
+  x: 80,
+  y: 250,
+  radius: 20,
+  velocity: 0,
+  gravity: 0.38,
+  jumpStrength: -7.2,
+  rotation: 0,
+  blinkTimer: 0, // 날아오를 때 눈 감는 프레임 타이머
+  hitTimer: 0,   // 피격 시 >< 눈 유지 타이머
+  invincibleTimer: 0, // 피격 후 무적 시간 타이머
+  lives: 3,
+  hasShield: false, // 얼음 보호막 아이템 적용 여부
+
+  reset() {
+    this.x = width * 0.25;
+    this.y = height * 0.4;
+    this.velocity = 0;
+    this.rotation = 0;
+    this.blinkTimer = 0;
+    this.hitTimer = 0;
+    this.invincibleTimer = 0;
+    this.lives = 3;
+    this.hasShield = false;
+    updateLivesUI();
+  },
+
+  flap() {
+    this.velocity = this.jumpStrength;
+    this.blinkTimer = 14; // 점프할 때 14프레임 동안 귀엽게 눈을 감음
+    bgm.playJumpSFX();
+    spawnParticles(this.x - 10, this.y + 5, '#e0f2fe', 6);
+  },
+
+  update() {
+    this.velocity += this.gravity;
+    this.y += this.velocity;
+    if (this.blinkTimer > 0) this.blinkTimer--;
+    if (this.hitTimer > 0) this.hitTimer--;
+    if (this.invincibleTimer > 0) this.invincibleTimer--;
+
+    // Rotation calculation
+    this.rotation = Math.min(Math.PI / 5, Math.max(-Math.PI / 6, (this.velocity * 0.08)));
+
+    // Ceiling check
+    if (this.y - this.radius < 0) {
+      this.y = this.radius;
+      this.velocity = 0;
+    }
+  },
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+
+    // 무적 상태일 때 반짝이는 연출 (깜빡임)
+    if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer / 5) % 2 === 0) {
+      ctx.globalAlpha = 0.5;
+    }
+
+    // 얼음 보호막 (Shield) 활성화 효과
+    if (this.hasShield) {
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius + 12, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    // Outer Soft Glow / Frost Aura
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius + 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(224, 242, 254, 0.4)';
+    ctx.fill();
+
+    // Round Polar Bear Ears
+    // Left Ear
+    ctx.beginPath();
+    ctx.arc(-13, -13, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(-13, -13, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f472b6'; // Pink inner ear
+    ctx.fill();
+
+    // Right Ear
+    ctx.beginPath();
+    ctx.arc(11, -13, 8, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(11, -13, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#f472b6';
+    ctx.fill();
+
+    // Main Polar Bear Head/Body (Fluffy White Circle)
+    ctx.beginPath();
+    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#94a3b8';
+    ctx.stroke();
+
+    // Rosy Cheeks
+    ctx.beginPath();
+    ctx.arc(-8, 5, 4, 0, Math.PI * 2);
+    ctx.arc(12, 5, 4, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(251, 113, 133, 0.4)';
+    ctx.fill();
+
+    // Snout (Muzzle)
+    ctx.beginPath();
+    ctx.ellipse(4, 2, 8, 6, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fill();
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Cute Black Nose
+    ctx.beginPath();
+    ctx.ellipse(5, 0, 4, 3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#0f172a';
+    ctx.fill();
+
+    // Eyes with Highlights / Blinking (^ ^) / Hit (><)
+    if (this.hitTimer > 0 || gameState === 'GAMEOVER') {
+      // 기둥/바닥 부딪혔을 때 아파하는 >< 눈
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      // 왼쪽 눈 >
+      ctx.beginPath();
+      ctx.moveTo(-8, -6);
+      ctx.lineTo(-3, -3);
+      ctx.lineTo(-8, 0);
+      ctx.stroke();
+
+      // 오른쪽 눈 <
+      ctx.beginPath();
+      ctx.moveTo(13, -6);
+      ctx.lineTo(8, -3);
+      ctx.lineTo(13, 0);
+      ctx.stroke();
+    } else if (this.blinkTimer > 0) {
+      // 또잉하고 날아오를 때 감는 웃는 눈 (^ ^)
+      ctx.beginPath();
+      ctx.arc(-5, -1, 3.5, Math.PI, 0);
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(11, -1, 3.5, Math.PI, 0);
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+    } else {
+      // 평소 눈 (동그란 별빛 눈)
+      // Left Eye
+      ctx.beginPath();
+      ctx.arc(-5, -3, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-6, -4, 1, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      // Right Eye
+      ctx.beginPath();
+      ctx.arc(11, -3, 3, 0, Math.PI * 2);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(10, -4, 1, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+
+    // Adventurer Red Scarf Flapping in the Wind
+    const scarfWiggle = Math.sin(frame * 0.2) * 4;
+    ctx.beginPath();
+    ctx.moveTo(-10, 12);
+    ctx.quadraticCurveTo(-18, 14 + scarfWiggle, -24, 20 + scarfWiggle);
+    ctx.lineTo(-18, 22 + scarfWiggle);
+    ctx.quadraticCurveTo(-10, 18, -2, 14);
+    ctx.fillStyle = '#ef4444';
+    ctx.fill();
+    ctx.strokeStyle = '#b91c1c';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Scarf Collar Band
+    ctx.beginPath();
+    ctx.ellipse(0, 14, 16, 5, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#ef4444';
+    ctx.fill();
+    ctx.strokeStyle = '#b91c1c';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+};
+
+const pipes = [];
+const PIPE_WIDTH = 68;
+const PIPE_GAP = 145;
+let pipeTimer = 0;
+
+// Collectibles System (Coins & Items)
+const collectibles = [];
+
+function spawnPipe() {
+  const minPipeHeight = 60;
+  const maxPipeHeight = Math.max(minPipeHeight, height - GROUND_HEIGHT - PIPE_GAP - minPipeHeight);
+  const topHeight = Math.floor(Math.random() * (maxPipeHeight - minPipeHeight + 1)) + minPipeHeight;
+
+  pipes.push({
+    x: width,
+    topHeight: topHeight,
+    bottomY: topHeight + PIPE_GAP,
+    passed: false
+  });
+
+  // Spawn Coins or Items inside pipe gaps
+  const rand = Math.random();
+  const itemY = topHeight + PIPE_GAP / 2 + (Math.random() * 40 - 20);
+
+  if (rand < 0.40) {
+    // 40% Chance: Gold Coin 🪙
+    collectibles.push({
+      x: width + PIPE_WIDTH / 2,
+      y: itemY,
+      type: 'COIN',
+      radius: 12,
+      collected: false
+    });
+  } else if (rand < 0.65) {
+    // 25% Chance: Special Item (Shield 🛡️ or Fish 🐟)
+    const itemType = Math.random() < 0.5 ? 'SHIELD' : 'FISH';
+    collectibles.push({
+      x: width + PIPE_WIDTH / 2,
+      y: itemY,
+      type: itemType,
+      radius: 15,
+      collected: false
+    });
+  }
+}
+
+function updateCollectibles() {
+  for (let i = collectibles.length - 1; i >= 0; i--) {
+    const c = collectibles[i];
+    c.x -= 2.3; // Match pipe movement speed
+
+    // Check collision with Polar Bear
+    if (!c.collected) {
+      const dist = Math.hypot(bird.x - c.x, bird.y - c.y);
+      if (dist < bird.radius + c.radius) {
+        c.collected = true;
+
+        if (c.type === 'COIN') {
+          score += 2;
+          liveScoreEl.textContent = score;
+          checkStageChange();
+          bgm.playItemSFX('COIN');
+          spawnParticles(c.x, c.y, '#facc15', 10);
+          spawnFloatingText(c.x, c.y - 10, '+2 COIN!', '#facc15');
+        } else if (c.type === 'SHIELD') {
+          bird.hasShield = true;
+          bgm.playItemSFX('SHIELD');
+          spawnParticles(c.x, c.y, '#38bdf8', 14);
+          spawnFloatingText(c.x, c.y - 10, '🛡️ 얼음 보호막!', '#38bdf8');
+        } else if (c.type === 'FISH') {
+          bgm.playItemSFX('FISH');
+          spawnParticles(c.x, c.y, '#f43f5e', 14);
+          if (bird.lives < 3) {
+            bird.lives++;
+            updateLivesUI();
+            spawnFloatingText(c.x, c.y - 10, '❤️ 체력 회복!', '#f43f5e');
+          } else {
+            score += 5;
+            liveScoreEl.textContent = score;
+            checkStageChange();
+            spawnFloatingText(c.x, c.y - 10, '+5 BONUS!', '#fb7185');
+          }
+        }
+      }
+    }
+
+    // Cleanup offscreen items
+    if (c.x < -30 || c.collected) {
+      collectibles.splice(i, 1);
+    }
+  }
+}
+
+function drawCollectibles() {
+  collectibles.forEach(c => {
+    if (c.collected) return;
+    ctx.save();
+    ctx.translate(c.x, c.y);
+
+    if (c.type === 'COIN') {
+      // Shiny Gold Coin 🪙
+      const pulse = Math.sin(frame * 0.15) * 2;
+      ctx.beginPath();
+      ctx.arc(0, 0, c.radius + pulse, 0, Math.PI * 2);
+      ctx.fillStyle = '#facc15';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#eab308';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.arc(0, 0, c.radius * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = '#fef08a';
+      ctx.fill();
+    } else if (c.type === 'SHIELD') {
+      // Ice Shield Bubble 🛡️
+      ctx.beginPath();
+      ctx.arc(0, 0, c.radius + 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#e0f2fe';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#0284c7';
+      ctx.stroke();
+
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🛡️', 0, 1);
+    } else if (c.type === 'FISH') {
+      // Salmon Item 🐟
+      ctx.beginPath();
+      ctx.arc(0, 0, c.radius + 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffe4e6';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#e11d48';
+      ctx.stroke();
+
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🐟', 0, 1);
+    }
+
+    ctx.restore();
+  });
+}
+
+function updatePipes() {
+  pipeTimer++;
+  if (pipeTimer % 115 === 0) {
+    spawnPipe();
+  }
+
+  for (let i = pipes.length - 1; i >= 0; i--) {
+    const p = pipes[i];
+    p.x -= 2.3; // Speed
+
+    // Score point check
+    if (!p.passed && p.x + PIPE_WIDTH < bird.x) {
+      p.passed = true;
+      score++;
+      liveScoreEl.textContent = score;
+      bgm.playScoreSFX();
+      spawnParticles(bird.x, bird.y, '#ffffff', 8);
+
+      // Check stage transition automatically
+      checkStageChange();
+    }
+
+    // Offscreen cleanup
+    if (p.x + PIPE_WIDTH < -20) {
+      pipes.splice(i, 1);
+    }
+  }
+}
+
+function drawPipes() {
+  const currentStage = STAGES[currentStageIndex];
+  const colors = currentStage.pipeGrad;
+
+  pipes.forEach(p => {
+    // Dynamic Gradient Glacier Pillars based on current stage
+    const iceGradTop = ctx.createLinearGradient(p.x, 0, p.x + PIPE_WIDTH, 0);
+    iceGradTop.addColorStop(0, colors[0]);
+    iceGradTop.addColorStop(0.3, colors[1]);
+    iceGradTop.addColorStop(0.8, colors[2]);
+    iceGradTop.addColorStop(1, colors[3]);
+
+    // Top Pipe / Glacier
+    ctx.fillStyle = iceGradTop;
+    ctx.fillRect(p.x, 0, PIPE_WIDTH, p.topHeight);
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = currentStage.pipeBorder;
+    ctx.strokeRect(p.x, 0, PIPE_WIDTH, p.topHeight);
+
+    // Top Pipe Cap (Ice Ledge)
+    ctx.fillRect(p.x - 4, p.topHeight - 24, PIPE_WIDTH + 8, 24);
+    ctx.strokeRect(p.x - 4, p.topHeight - 24, PIPE_WIDTH + 8, 24);
+
+    // Snow / Icicle Drips on Top Glacier
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(p.x - 4, p.topHeight - 6, PIPE_WIDTH + 8, 6);
+    ctx.beginPath();
+    ctx.moveTo(p.x + 6, p.topHeight);
+    ctx.lineTo(p.x + 10, p.topHeight + 12);
+    ctx.lineTo(p.x + 14, p.topHeight);
+    ctx.moveTo(p.x + 30, p.topHeight);
+    ctx.lineTo(p.x + 35, p.topHeight + 16);
+    ctx.lineTo(p.x + 40, p.topHeight);
+    ctx.fill();
+
+    // Bottom Pipe / Glacier
+    const bottomPipeHeight = height - GROUND_HEIGHT - p.bottomY;
+    ctx.fillStyle = iceGradTop;
+    ctx.fillRect(p.x, p.bottomY, PIPE_WIDTH, bottomPipeHeight);
+    ctx.strokeRect(p.x, p.bottomY, PIPE_WIDTH, bottomPipeHeight);
+
+    // Bottom Pipe Cap
+    ctx.fillRect(p.x - 4, p.bottomY, PIPE_WIDTH + 8, 24);
+    ctx.strokeRect(p.x - 4, p.bottomY, PIPE_WIDTH + 8, 24);
+
+    // Snow Cap on Bottom Glacier Top
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(p.x - 4, p.bottomY, PIPE_WIDTH + 8, 8);
+  });
+}
+
+/* Dynamic Background Sky & Elements Drawing */
+function drawBackground() {
+  const currentStage = STAGES[currentStageIndex];
+
+  // Dynamic Sky Canvas Gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+  skyGrad.addColorStop(0, currentStage.skyTop);
+  skyGrad.addColorStop(0.5, currentStage.skyMid);
+  skyGrad.addColorStop(1, currentStage.skyBottom);
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, width, height);
+
+  // Soft White Sky Clouds
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+  clouds.forEach(cloud => {
+    cloud.x -= cloud.speed;
+    if (cloud.x < -100) cloud.x = width + 50;
+
+    ctx.save();
+    ctx.translate(cloud.x, cloud.y);
+    ctx.scale(cloud.scale, cloud.scale);
+    ctx.beginPath();
+    ctx.arc(0, 0, 22, 0, Math.PI * 2);
+    ctx.arc(20, -10, 25, 0, Math.PI * 2);
+    ctx.arc(42, 0, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  });
+}
+
+function drawGround() {
+  const groundY = height - GROUND_HEIGHT;
+  const currentStage = STAGES[currentStageIndex];
+
+  // Ice & Deep Snow Layer
+  ctx.fillStyle = currentStage.groundBase;
+  ctx.fillRect(0, groundY, width, GROUND_HEIGHT);
+
+  // Top White Snow Blanket
+  ctx.fillStyle = currentStage.groundTop;
+  ctx.fillRect(0, groundY, width, 20);
+
+  // Sparkly Ice Line
+  ctx.beginPath();
+  ctx.moveTo(0, groundY + 20);
+  ctx.lineTo(width, groundY + 20);
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = currentStage.groundStripe;
+  ctx.stroke();
+
+  // Moving Snow Pattern
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+  const stripeOffset = (frame * 2.3) % 24;
+  for (let x = -24; x < width + 24; x += 24) {
+    ctx.beginPath();
+    ctx.arc(x - stripeOffset, groundY + 10, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* Particles Update */
+function updateAndDrawParticles() {
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= p.decay;
+
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+
+    ctx.save();
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+function checkCollision() {
+  const groundY = height - GROUND_HEIGHT;
+
+  // Ground hit
+  if (bird.y + bird.radius >= groundY) {
+    return true;
+  }
+
+  // Pipe hits
+  for (let i = 0; i < pipes.length; i++) {
+    const p = pipes[i];
+
+    // Horizontal bounds
+    if (bird.x + bird.radius - 3 > p.x && bird.x - bird.radius + 3 < p.x + PIPE_WIDTH) {
+      // Top pipe hit or Bottom pipe hit
+      if (bird.y - bird.radius + 3 < p.topHeight || bird.y + bird.radius - 3 > p.bottomY) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function gameLoop() {
+  frame++;
+  ctx.clearRect(0, 0, width, height);
+
+  drawBackground();
+
+  if (gameState === 'PLAYING') {
+    bird.update();
+    updatePipes();
+    updateCollectibles();
+
+    if (checkCollision()) {
+      if (bird.invincibleTimer <= 0) {
+        if (bird.hasShield) {
+          // Shield absorbs 1 collision hit completely!
+          bird.hasShield = false;
+          bird.invincibleTimer = 50; // Grant brief invincibility
+          bird.velocity = -4.0;
+          bgm.playHitSFX();
+          spawnParticles(bird.x, bird.y, '#38bdf8', 16);
+          spawnFloatingText(bird.x, bird.y - 15, '🛡️ 보호막 방어!', '#38bdf8');
+        } else {
+          bird.lives--;
+          bird.hitTimer = 40;        // 40프레임 동안 아파하는 >< 눈 표시
+          bird.invincibleTimer = 80;  // 80프레임(약 1.3초) 무적 시간 제공
+          bird.velocity = -4.5;      // 부딪힐 때 튕겨나가는 효과
+          bgm.playHitSFX();
+          spawnParticles(bird.x, bird.y, '#f43f5e', 12);
+          updateLivesUI();
+
+          if (bird.lives <= 0) {
+            triggerGameOver();
+            return;
+          }
+        }
+      }
+    }
+  } else if (gameState === 'START') {
+    // Floating bird animation on start screen
+    bird.y = height * 0.45 + Math.sin(frame * 0.05) * 8;
+  }
+
+  drawPipes();
+  drawCollectibles();
+  drawGround();
+  bird.draw();
+  updateAndDrawParticles();
+  updateAndDrawFloatingTexts();
+
+  if (gameState !== 'GAMEOVER') {
+    animationReq = requestAnimationFrame(gameLoop);
+  }
+}
+
+function startGame() {
+  bgm.start();
+  gameState = 'PLAYING';
+  score = 0;
+  currentStageIndex = 0;
+  pipeTimer = 0;
+  pipes.length = 0;
+  collectibles.length = 0;
+  particles.length = 0;
+  floatingTexts.length = 0;
+
+  liveScoreEl.textContent = '0';
+
+  startScreen.classList.add('hidden');
+  gameoverScreen.classList.add('hidden');
+  scoreContainer.classList.remove('opacity-0');
+
+  bird.reset();
+  bird.flap();
+
+  if (animationReq) cancelAnimationFrame(animationReq);
+  gameLoop();
+}
+
+function triggerGameOver() {
+  gameState = 'GAMEOVER';
+  bgm.stop();
+
+  // Update high score
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('polar_bear_highscore', highScore.toString());
+  }
+
+  finalScoreEl.textContent = score;
+  bestScoreEl.textContent = highScore;
+  startHighScoreEl.textContent = highScore;
+
+  scoreContainer.classList.add('opacity-0');
+
+  // Display Gameover card with popup animation
+  gameoverScreen.classList.remove('hidden');
+  setTimeout(() => {
+    gameoverCard.classList.remove('scale-95', 'opacity-0');
+    gameoverCard.classList.add('scale-100', 'opacity-100');
+  }, 10);
+}
+
+/* User Input Controls (Click / Touch / Spacebar) */
+function handleInput(e) {
+  // Prevent spacebar page scrolling
+  if (e.type === 'keydown' && e.code === 'Space') {
+    e.preventDefault();
+  }
+
+  if (e.type === 'keydown' && e.code !== 'Space') return;
+
+  if (gameState === 'START') {
+    startGame();
+  } else if (gameState === 'PLAYING') {
+    bird.flap();
+  }
+}
+
+window.addEventListener('keydown', handleInput);
+canvas.addEventListener('click', handleInput);
+
+// BGM Toggle Button Listener
+bgmToggleBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const muted = bgm.toggleMute();
+  if (muted) {
+    bgmIcon.textContent = '🔇';
+    bgmText.textContent = 'BGM OFF';
+    bgmToggleBtn.classList.add('opacity-60');
+  } else {
+    bgmIcon.textContent = '🎵';
+    bgmText.textContent = 'BGM ON';
+    bgmToggleBtn.classList.remove('opacity-60');
+  }
+});
+
+// Restart Button click listener
+restartBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  gameoverCard.classList.add('scale-95', 'opacity-0');
+  gameoverCard.classList.remove('scale-100', 'opacity-100');
+  setTimeout(() => {
+    startGame();
+  }, 150);
+});
+
+// Initial Render
+bird.reset();
+gameLoop();
+</script>
+</body>
+</html>
